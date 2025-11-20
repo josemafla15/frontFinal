@@ -60,7 +60,12 @@ export interface MetricasTiempoReal {
   tiempo_transcurrido: number
   numero_intentos: number
   precision_actual: number
-  ultimos_datos: any[]
+  ultimos_datos: {
+    angulo_pitch: number
+    angulo_roll: number
+    fuerza: number
+    timestamp: string
+  }[]
   angulo_actual: number
   fuerza_actual: number
 }
@@ -83,8 +88,6 @@ export interface EstadisticasEstudiante {
 export const estudiantesApi = {
   listar: async (): Promise<Estudiante[]> => {
     const response = await api.get('/estudiantes/')
-    // El backend puede devolver un objeto paginado { results: [...], count: X }
-    // o directamente un array
     return Array.isArray(response.data) ? response.data : (response.data.results || [])
   },
 
@@ -102,8 +105,6 @@ export const estudiantesApi = {
 export const dispositivosApi = {
   listar: async (): Promise<DispositivoESP32[]> => {
     const response = await api.get('/placa/dispositivos/')
-    // El backend puede devolver un objeto paginado { results: [...], count: X }
-    // o directamente un array
     return Array.isArray(response.data) ? response.data : (response.data.results || [])
   },
 }
@@ -111,8 +112,6 @@ export const dispositivosApi = {
 export const practicasApi = {
   listar: async (): Promise<PracticaActiva[]> => {
     const response = await api.get('/placa/practicas/')
-    // El backend puede devolver un objeto paginado { results: [...], count: X }
-    // o directamente un array
     return Array.isArray(response.data) ? response.data : (response.data.results || [])
   },
 
@@ -168,4 +167,3 @@ export const metricasApi = {
 }
 
 export default api
-

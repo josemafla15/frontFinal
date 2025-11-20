@@ -55,35 +55,35 @@ export default function CrearEstudiantePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-2xl mx-auto mt-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4 md:p-6">
+      <div className="max-w-2xl mx-auto mt-4 sm:mt-8">
         <Link
           href="/"
-          className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6"
+          className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4 sm:mb-6"
         >
           <ArrowLeft size={20} className="mr-2" />
           Volver al inicio
         </Link>
 
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <div className="flex items-center mb-6">
-            <UserPlus className="text-blue-600 mr-3" size={32} />
-            <h1 className="text-3xl font-bold text-gray-900">Crear Perfil de Estudiante</h1>
+        <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6 md:p-8">
+          <div className="flex items-center mb-4 sm:mb-6">
+            <UserPlus className="text-blue-600 mr-2 sm:mr-3" size={28} />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Crear Perfil de Estudiante</h1>
           </div>
 
           {success && (
-            <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm sm:text-base">
               ¡Estudiante creado exitosamente! Redirigiendo...
             </div>
           )}
 
           {error && (
-            <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm sm:text-base">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <div>
               <label htmlFor="codigo_estudiante" className="block text-sm font-medium text-gray-700 mb-2">
                 Código de Estudiante *
@@ -95,7 +95,7 @@ export default function CrearEstudiantePage() {
                 value={formData.codigo_estudiante}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
                 placeholder="Ej: 202310001"
               />
             </div>
@@ -111,7 +111,7 @@ export default function CrearEstudiantePage() {
                 value={formData.nombre_completo}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
                 placeholder="Ej: Juan Pérez"
               />
             </div>
@@ -127,12 +127,12 @@ export default function CrearEstudiantePage() {
                 value={formData.correo}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
                 placeholder="Ej: juan.perez@universidad.edu.co"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="programa" className="block text-sm font-medium text-gray-700 mb-2">
                   Programa *
@@ -143,7 +143,7 @@ export default function CrearEstudiantePage() {
                   value={formData.programa}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white text-sm sm:text-base"
                 >
                   <option value="Enfermería">Enfermería</option>
                   <option value="Medicina">Medicina</option>
@@ -164,7 +164,7 @@ export default function CrearEstudiantePage() {
                   required
                   min="1"
                   max="12"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
                 />
               </div>
             </div>
@@ -179,16 +179,16 @@ export default function CrearEstudiantePage() {
                 name="telefono"
                 value={formData.telefono}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
                 placeholder="Ej: +57 300 123 4567"
               />
             </div>
 
-            <div className="flex gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg transition-colors flex items-center justify-center text-sm sm:text-base"
               >
                 {loading ? (
                   'Guardando...'
@@ -201,7 +201,7 @@ export default function CrearEstudiantePage() {
               </button>
               <Link
                 href="/"
-                className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 sm:px-6 py-2 sm:py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-center text-sm sm:text-base"
               >
                 Cancelar
               </Link>
@@ -213,4 +213,3 @@ export default function CrearEstudiantePage() {
     </div>
   )
 }
-
