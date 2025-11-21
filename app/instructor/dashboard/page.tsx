@@ -61,8 +61,8 @@ export default function InstructorDashboard() {
       const activa = practicasArray.find((p) => p.estado === 'iniciada' || p.estado === 'pausada')
       if (activa) {
         setPracticaActual(activa)
-        setSelectedEstudiante(activa.estudiante.id)
-        setSelectedDispositivo(activa.dispositivo.id)
+        if (activa.estudiante?.id) setSelectedEstudiante(activa.estudiante.id)
+        if (activa.dispositivo?.id) setSelectedDispositivo(activa.dispositivo.id)
         if (activa.estado === 'iniciada') {
           cargarMetricas(activa.id)
         }
@@ -170,7 +170,7 @@ export default function InstructorDashboard() {
   }
 
   const verMetricasCompletas = () => {
-    if (practicaActual) {
+    if (practicaActual?.estudiante?.id) {
       router.push(`/reportes?estudiante_id=${practicaActual.estudiante.id}`)
     }
   }
@@ -258,11 +258,11 @@ export default function InstructorDashboard() {
                   <div className="p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <p className="text-xs sm:text-sm text-gray-600">Estudiante:</p>
                     <p className="font-semibold text-gray-900 text-sm sm:text-base">
-                      {practicaActual.estudiante.nombre_completo}
+                      {practicaActual.estudiante?.nombre_completo || 'N/A'}
                     </p>
                     <p className="text-xs sm:text-sm text-gray-600 mt-2">Dispositivo:</p>
                     <p className="font-semibold text-gray-900 text-sm sm:text-base">
-                      {practicaActual.dispositivo.nombre}
+                      {practicaActual.dispositivo?.nombre || 'N/A'}
                     </p>
                     <p className="text-xs sm:text-sm text-gray-600 mt-2">Estado:</p>
                     <p className="font-semibold text-gray-900 capitalize text-sm sm:text-base">
@@ -313,7 +313,7 @@ export default function InstructorDashboard() {
                       key={practica.id}
                       className="p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200"
                     >
-                      <p className="font-semibold text-xs sm:text-sm">{practica.estudiante.nombre_completo}</p>
+                      <p className="font-semibold text-xs sm:text-sm">{practica.estudiante?.nombre_completo || 'N/A'}</p>
                       <p className="text-xs text-gray-600 capitalize">{practica.estado}</p>
                     </div>
                   ))}
