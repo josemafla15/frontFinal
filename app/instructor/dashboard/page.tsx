@@ -13,7 +13,7 @@ import {
   MetricasTiempoReal,
 } from '@/lib/api'
 import HelpButton from '@/components/HelpButton'
-import { ArrowLeft, Play, Pause, Square, RefreshCw, Users, Activity, BarChart3 } from 'lucide-react'
+import { ArrowLeft, Play, Pause, Square, Users, Activity, BarChart3 } from 'lucide-react'
 import Link from 'next/link'
 
 export default function InstructorDashboard() {
@@ -26,7 +26,7 @@ export default function InstructorDashboard() {
   const [selectedEstudiante, setSelectedEstudiante] = useState<number | null>(null)
   const [selectedDispositivo, setSelectedDispositivo] = useState<number | null>(null)
   const [practicaActual, setPracticaActual] = useState<PracticaActiva | null>(null)
-  const [mostrarResumen, setMostrarResumen] = useState(false)
+  const [practicaFinalizada, setPracticaFinalizada] = useState<PracticaActiva | null>(null)
 
   useEffect(() => {
     cargarDatos()
@@ -96,6 +96,13 @@ export default function InstructorDashboard() {
     }
   }
 
+  const resetearEstado = () => {
+    setPracticaActual(null)
+    setSelectedEstudiante(null)
+    setSelectedDispositivo(null)
+    cargarDatos()
+  }
+
   const iniciarPractica = async () => {
     if (!selectedEstudiante || !selectedDispositivo) {
       alert('Por favor selecciona un estudiante y un dispositivo')
@@ -106,7 +113,7 @@ export default function InstructorDashboard() {
       setLoading(true)
       const nuevaPractica = await practicasApi.crear(selectedEstudiante, selectedDispositivo)
       setPracticaActual(nuevaPractica)
-      setMostrarResumen(false)
+      setPracticaFinalizada(null) // Limpiar práctica finalizada anterior
       await cargarDatos()
     } catch (error: any) {
       alert(error.response?.data?.error || 'Error al iniciar la práctica')
@@ -153,12 +160,12 @@ export default function InstructorDashboard() {
     try {
       setLoading(true)
       await practicasApi.finalizar(practicaActual.id)
-      setMostrarResumen(true)
-      await cargarDatos()
       alert('Práctica finalizada exitosamente')
+      // Guardar la práctica finalizada para mostrar sus métricas
+      setPracticaFinalizada(practicaActual)
+      resetearEstado()
     } catch (error: any) {
       alert(error.response?.data?.error || 'Error al finalizar la práctica')
-    } finally {
       setLoading(false)
     }
   }
@@ -170,12 +177,12 @@ export default function InstructorDashboard() {
   }
 
   const verMetricasCompletas = () => {
-    if (practicaActual?.estudiante?.id) {
-      router.push(`/reportes?estudiante_id=${practicaActual.estudiante.id}`)
+    if (practicaFinalizada?.estudiante?.id) {
+      router.push(`/reportes?estudiante_id=${practicaFinalizada.estudiante.id}`)
     }
   }
 
-  const metrica = practicaActual ? metricas[practicaActual.id] : null
+  const metrica = practicaActual ? metricas[practicaActual.id] : (practicaFinalizada ? metricas[practicaFinalizada.id] : null)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-2 sm:p-4 md:p-6">
@@ -324,35 +331,22 @@ export default function InstructorDashboard() {
 
           {/* Panel de Métricas */}
           <div className="lg:col-span-2">
-            {practicaActual ? (
+            {practicaActual || practicaFinalizada ? (
               <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
                     <Activity size={24} className="mr-2 text-green-600" />
-                    Métricas en Tiempo Real
+                    {practicaFinalizada ? 'Métricas de la Práctica Finalizada' : 'Métricas en Tiempo Real'}
                   </h2>
-                  {practicaActual.estado === 'iniciada' && (
-                    <button
-                      onClick={() => practicaActual && cargarMetricas(practicaActual.id)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    >
-                      <RefreshCw size={20} />
-                    </button>
-                  )}
                 </div>
 
-                {practicaActual.estado === 'iniciada' && metrica ? (
+                {practicaActual && practicaActual.estado === 'iniciada' && metrica ? (
                   <>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                       <MetricCard
                         title="Tiempo Transcurrido"
                         value={formatearTiempo(metrica.tiempo_transcurrido)}
                         icon="⏱️"
-                      />
-                      <MetricCard
-                        title="Número de Intentos"
-                        value={metrica.numero_intentos.toString()}
-                        icon="🎯"
                       />
                       <MetricCard
                         title="Precisión"
@@ -365,20 +359,15 @@ export default function InstructorDashboard() {
                         icon="💪"
                       />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mt-3 sm:mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-1 gap-3 sm:gap-4 mt-3 sm:mt-4">
                       <MetricCard
                         title="Ángulo (Pitch)"
                         value={`${metrica.angulo_actual.toFixed(1)}°`}
                         icon="📐"
                       />
-                      <MetricCard
-                        title="Últimos Datos"
-                        value={metrica.ultimos_datos.length > 0 ? `${metrica.ultimos_datos.length} registros` : 'Sin datos'}
-                        icon="📈"
-                      />
                     </div>
                   </>
-                ) : practicaActual.estado === 'pausada' ? (
+                ) : practicaActual && practicaActual.estado === 'pausada' ? (
                   <div className="text-center py-8 text-gray-500">
                     <Pause size={64} className="mx-auto text-yellow-300 mb-4" />
                     <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">
@@ -388,25 +377,50 @@ export default function InstructorDashboard() {
                       Haz clic en Reanudar para continuar capturando métricas
                     </p>
                   </div>
+                ) : practicaFinalizada && metrica ? (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+                      <MetricCard
+                        title="Tiempo Total"
+                        value={formatearTiempo(metrica.tiempo_transcurrido)}
+                        icon="⏱️"
+                      />
+                      <MetricCard
+                        title="Precisión Final"
+                        value={`${metrica.precision_actual.toFixed(1)}%`}
+                        icon="📊"
+                      />
+                      <MetricCard
+                        title="Fuerza Final"
+                        value={`${metrica.fuerza_actual.toFixed(1)}g`}
+                        icon="💪"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-1 gap-3 sm:gap-4 mt-3 sm:mt-4">
+                      <MetricCard
+                        title="Ángulo Final (Pitch)"
+                        value={`${metrica.angulo_actual.toFixed(1)}°`}
+                        icon="📐"
+                      />
+                    </div>
+
+                    {/* Botón Ver Métricas Completas - Solo al finalizar */}
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <button
+                        onClick={verMetricasCompletas}
+                        className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        <BarChart3 size={20} />
+                        Ver Métricas Completas
+                      </button>
+                    </div>
+                  </>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <Activity size={64} className="mx-auto text-gray-300 mb-4" />
                     <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">
                       Cargando métricas...
                     </h3>
-                  </div>
-                )}
-
-                {/* Botón Ver Métricas Completas - Solo si está finalizada o se mostró el resumen */}
-                {mostrarResumen && (
-                  <div className="mt-6 pt-6 border-t border-gray-200">
-                    <button
-                      onClick={verMetricasCompletas}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
-                    >
-                      <BarChart3 size={20} />
-                      Ver Métricas Completas
-                    </button>
                   </div>
                 )}
               </div>
@@ -422,7 +436,6 @@ export default function InstructorDashboard() {
                   Inicia una sesión de práctica para ver las métricas en tiempo real
                 </p>
               </div>
-
             )}
           </div>
         </div>

@@ -2,10 +2,21 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { estudiantesApi, metricasApi, EstadisticasEstudiante } from '@/lib/api'
+import { estudiantesApi, metricasApi, practicasApi } from '@/lib/api'
 import HelpButton from '@/components/HelpButton'
-import { ArrowLeft, FileText, Search, TrendingUp, Clock, Target, Award } from 'lucide-react'
+import { ArrowLeft, FileText, TrendingUp, Clock, Target, Award, ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
+
+interface Practica {
+  id: number
+  fecha_inicio: string
+  fecha_fin?: string
+  duracion_total_segundos: number
+  numero_intentos: number
+  intentos_exitosos: number
+  precision_promedio: number
+  estado: string
+}
 
 export default function ReportesPage() {
   const searchParams = useSearchParams()
@@ -15,7 +26,9 @@ export default function ReportesPage() {
   const [selectedEstudiante, setSelectedEstudiante] = useState<number | null>(
     estudianteIdParam ? parseInt(estudianteIdParam) : null
   )
-  const [estadisticas, setEstadisticas] = useState<EstadisticasEstudiante | null>(null)
+  const [estadisticas, setEstadisticas] = useState<any | null>(null)
+  const [practicas, setPracticas] = useState<Practica[]>([])
+  const [selectedPractica, setSelectedPractica] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -25,7 +38,7 @@ export default function ReportesPage() {
 
   useEffect(() => {
     if (selectedEstudiante) {
-      cargarEstadisticas()
+      cargarDatos()
     }
   }, [selectedEstudiante])
 
@@ -39,17 +52,28 @@ export default function ReportesPage() {
     }
   }
 
-  const cargarEstadisticas = async () => {
+  const cargarDatos = async () => {
     if (!selectedEstudiante) return
 
     try {
       setLoading(true)
       setError(null)
-      const data = await metricasApi.estadisticasEstudiante(selectedEstudiante)
-      setEstadisticas(data)
+      
+      // Cargar estadísticas del estudiante
+      const statsData = await metricasApi.estadisticasEstudiante(selectedEstudiante)
+      setEstadisticas(statsData)
+      
+      // Cargar todas las prácticas del estudiante
+      const practicasData = await practicasApi.listar()
+      const practicasArray = Array.isArray(practicasData) ? practicasData : []
+      const practicasEstudiante = practicasArray.filter(
+        (p: any) => p.estudiante?.id === selectedEstudiante && p.estado === 'finalizada'
+      )
+      setPracticas(practicasEstudiante)
     } catch (error: any) {
-      setError(error.response?.data?.error || 'Error al cargar estadísticas')
+      setError(error.response?.data?.error || 'Error al cargar datos')
       setEstadisticas(null)
+      setPracticas([])
     } finally {
       setLoading(false)
     }
@@ -58,7 +82,29 @@ export default function ReportesPage() {
   const handleEstudianteChange = (estudianteId: number) => {
     setSelectedEstudiante(estudianteId)
     setEstadisticas(null)
+    setPracticas([])
+    setSelectedPractica(null)
     setError(null)
+  }
+
+  const togglePractica = (practicaId: number) => {
+    setSelectedPractica(selectedPractica === practicaId ? null : practicaId)
+  }
+
+  const formatearTiempo = (segundos: number) => {
+    const mins = Math.floor(segundos / 60)
+    const secs = segundos % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const formatearFecha = (fecha: string) => {
+    return new Date(fecha).toLocaleString('es-CO', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
   return (
@@ -88,28 +134,18 @@ export default function ReportesPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Seleccionar Estudiante
               </label>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <select
-                  value={selectedEstudiante || ''}
-                  onChange={(e) => handleEstudianteChange(Number(e.target.value))}
-                  className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 bg-white text-sm sm:text-base"
-                >
-                  <option value="">-- Seleccione un estudiante --</option>
-                  {estudiantes.map((est) => (
-                    <option key={est.id} value={est.id}>
-                      {est.nombre_completo} ({est.codigo_estudiante})
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={cargarEstadisticas}
-                  disabled={!selectedEstudiante || loading}
-                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 text-white font-semibold py-2 px-4 sm:px-6 rounded-lg transition-colors flex items-center justify-center text-sm sm:text-base whitespace-nowrap"
-                >
-                  <Search size={20} className="mr-2" />
-                  {loading ? 'Cargando...' : 'Generar Reporte'}
-                </button>
-              </div>
+              <select
+                value={selectedEstudiante || ''}
+                onChange={(e) => handleEstudianteChange(Number(e.target.value))}
+                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 bg-white text-sm sm:text-base"
+              >
+                <option value="">-- Seleccione un estudiante --</option>
+                {estudiantes.map((est) => (
+                  <option key={est.id} value={est.id}>
+                    {est.nombre_completo} ({est.codigo_estudiante})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -138,91 +174,114 @@ export default function ReportesPage() {
               </div>
             </div>
 
-            {/* Métricas de Desempeño */}
-            <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">Métricas de Desempeño</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <StatCard
-                  icon={<TrendingUp size={24} />}
-                  title="Precisión Promedio"
-                  value={`${estadisticas.promedio_precision.toFixed(1)}%`}
-                  color="text-blue-600"
-                  bgColor="bg-blue-50"
-                />
-                <StatCard
-                  icon={<Target size={24} />}
-                  title="Intentos Promedio"
-                  value={estadisticas.promedio_intentos.toFixed(1)}
-                  color="text-green-600"
-                  bgColor="bg-green-50"
-                />
-                <StatCard
-                  icon={<Clock size={24} />}
-                  title="Tiempo Promedio"
-                  value={`${estadisticas.promedio_tiempo_minutos.toFixed(1)} min`}
-                  color="text-purple-600"
-                  bgColor="bg-purple-50"
-                />
-                <StatCard
-                  icon={<Award size={24} />}
-                  title="Calificación Promedio"
-                  value={estadisticas.promedio_calificacion.toFixed(1)}
-                  color="text-yellow-600"
-                  bgColor="bg-yellow-50"
-                />
-              </div>
-            </div>
-
-            {/* Mejor y Última Práctica */}
-            {(estadisticas.mejor_practica || estadisticas.ultima_practica) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                {estadisticas.mejor_practica && (
-                  <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 flex items-center">
-                      <Award size={24} className="mr-2 text-yellow-600" />
-                      Mejor Práctica
-                    </h3>
-                    <div className="space-y-2">
-                      <p className="text-xs sm:text-sm text-gray-600">Fecha:</p>
-                      <p className="font-semibold text-gray-900 text-sm sm:text-base">
-                        {estadisticas.mejor_practica.fecha}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-600 mt-3">Precisión:</p>
-                      <p className="font-semibold text-gray-900 text-sm sm:text-base">
-                        {estadisticas.mejor_practica.precision.toFixed(1)}%
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-600 mt-3">Intentos:</p>
-                      <p className="font-semibold text-gray-900 text-sm sm:text-base">
-                        {estadisticas.mejor_practica.intentos}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {estadisticas.ultima_practica && (
-                  <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 flex items-center">
-                      <Clock size={24} className="mr-2 text-blue-600" />
-                      Última Práctica
-                    </h3>
-                    <div className="space-y-2">
-                      <p className="text-xs sm:text-sm text-gray-600">Fecha:</p>
-                      <p className="font-semibold text-gray-900 text-sm sm:text-base">
-                        {estadisticas.ultima_practica.fecha}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-600 mt-3">Precisión:</p>
-                      <p className="font-semibold text-gray-900 text-sm sm:text-base">
-                        {estadisticas.ultima_practica.precision.toFixed(1)}%
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-600 mt-3">Intentos:</p>
-                      <p className="font-semibold text-gray-900 text-sm sm:text-base">
-                        {estadisticas.ultima_practica.intentos}
-                      </p>
-                    </div>
-                  </div>
-                )}
+            {/* Métricas de la Última Práctica */}
+            {estadisticas.ultima_practica && (
+              <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
+                  Métricas de Desempeño de la Última Práctica
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <StatCard
+                    icon={<TrendingUp size={24} />}
+                    title="Precisión"
+                    value={`${estadisticas.ultima_practica.precision.toFixed(1)}%`}
+                    color="text-blue-600"
+                    bgColor="bg-blue-50"
+                  />
+                  <StatCard
+                    icon={<Target size={24} />}
+                    title="Intentos"
+                    value={estadisticas.ultima_practica.intentos.toString()}
+                    color="text-green-600"
+                    bgColor="bg-green-50"
+                  />
+                  <StatCard
+                    icon={<Clock size={24} />}
+                    title="Fecha"
+                    value={new Date(estadisticas.ultima_practica.fecha).toLocaleDateString('es-CO')}
+                    color="text-purple-600"
+                    bgColor="bg-purple-50"
+                  />
+                  <StatCard
+                    icon={<Award size={24} />}
+                    title="Calificación"
+                    value="0.0"
+                    color="text-yellow-600"
+                    bgColor="bg-yellow-50"
+                  />
+                </div>
               </div>
             )}
+
+            {/* Listado de Todas las Prácticas */}
+            <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
+                Historial de Prácticas
+              </h2>
+              {practicas.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No hay prácticas finalizadas</p>
+              ) : (
+                <div className="space-y-3">
+                  {practicas.map((practica) => (
+                    <div key={practica.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => togglePractica(practica.id)}
+                        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="font-semibold text-gray-900">
+                            Práctica #{practica.id}
+                          </span>
+                          <span className="text-sm text-gray-600">
+                            {formatearFecha(practica.fecha_inicio)}
+                          </span>
+                        </div>
+                        {selectedPractica === practica.id ? (
+                          <ChevronUp size={20} className="text-gray-600" />
+                        ) : (
+                          <ChevronDown size={20} className="text-gray-600" />
+                        )}
+                      </button>
+                      
+                      {selectedPractica === practica.id && (
+                        <div className="p-4 bg-white">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                            <StatCard
+                              icon={<TrendingUp size={20} />}
+                              title="Precisión Promedio"
+                              value={`${(practica.precision_promedio || 0).toFixed(1)}%`}
+                              color="text-blue-600"
+                              bgColor="bg-blue-50"
+                            />
+                            <StatCard
+                              icon={<Target size={20} />}
+                              title="Intentos Totales"
+                              value={(practica.numero_intentos || 0).toString()}
+                              color="text-green-600"
+                              bgColor="bg-green-50"
+                            />
+                            <StatCard
+                              icon={<Clock size={20} />}
+                              title="Duración"
+                              value={formatearTiempo(practica.duracion_total_segundos || 0)}
+                              color="text-purple-600"
+                              bgColor="bg-purple-50"
+                            />
+                            <StatCard
+                              icon={<Award size={20} />}
+                              title="Calificación"
+                              value="0.0"
+                              color="text-yellow-600"
+                              bgColor="bg-yellow-50"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -230,10 +289,10 @@ export default function ReportesPage() {
           <div className="bg-white rounded-lg shadow-xl p-8 sm:p-12 text-center">
             <FileText size={48} className="mx-auto text-gray-300 mb-4" />
             <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">
-              Selecciona un estudiante y genera el reporte
+              Selecciona un estudiante
             </h3>
             <p className="text-sm sm:text-base text-gray-500">
-              Haz clic en Generar Reporte para ver las estadísticas del estudiante seleccionado
+              Selecciona un estudiante para ver su historial de prácticas y métricas
             </p>
           </div>
         )}

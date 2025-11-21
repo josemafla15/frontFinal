@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { estudiantesApi, EstudianteCreate } from '@/lib/api'
 import HelpButton from '@/components/HelpButton'
-import { ArrowLeft, Save, UserPlus } from 'lucide-react'
+import { ArrowLeft, Save, UserPlus, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 export default function CrearEstudiantePage() {
@@ -39,9 +39,6 @@ export default function CrearEstudiantePage() {
     try {
       await estudiantesApi.crear(formData)
       setSuccess(true)
-      setTimeout(() => {
-        router.push('/instructor/dashboard')
-      }, 2000)
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.error ||
@@ -52,6 +49,10 @@ export default function CrearEstudiantePage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const irAPractica = () => {
+    router.push('/instructor/dashboard')
   }
 
   return (
@@ -73,7 +74,7 @@ export default function CrearEstudiantePage() {
 
           {success && (
             <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm sm:text-base">
-              ¡Estudiante creado exitosamente! Redirigiendo...
+              ¡Estudiante creado exitosamente!
             </div>
           )}
 
@@ -95,7 +96,8 @@ export default function CrearEstudiantePage() {
                 value={formData.codigo_estudiante}
                 onChange={handleChange}
                 required
-                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                disabled={success}
+                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base disabled:bg-gray-100"
                 placeholder="Ej: 202310001"
               />
             </div>
@@ -111,7 +113,8 @@ export default function CrearEstudiantePage() {
                 value={formData.nombre_completo}
                 onChange={handleChange}
                 required
-                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                disabled={success}
+                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base disabled:bg-gray-100"
                 placeholder="Ej: Juan Pérez"
               />
             </div>
@@ -127,7 +130,8 @@ export default function CrearEstudiantePage() {
                 value={formData.correo}
                 onChange={handleChange}
                 required
-                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                disabled={success}
+                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base disabled:bg-gray-100"
                 placeholder="Ej: juan.perez@universidad.edu.co"
               />
             </div>
@@ -143,7 +147,8 @@ export default function CrearEstudiantePage() {
                   value={formData.programa}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white text-sm sm:text-base"
+                  disabled={success}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white text-sm sm:text-base disabled:bg-gray-100"
                 >
                   <option value="Enfermería">Enfermería</option>
                   <option value="Medicina">Medicina</option>
@@ -164,7 +169,8 @@ export default function CrearEstudiantePage() {
                   required
                   min="1"
                   max="12"
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                  disabled={success}
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base disabled:bg-gray-100"
                 />
               </div>
             </div>
@@ -179,32 +185,38 @@ export default function CrearEstudiantePage() {
                 name="telefono"
                 value={formData.telefono}
                 onChange={handleChange}
-                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                disabled={success}
+                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base disabled:bg-gray-100"
                 placeholder="Ej: +57 300 123 4567"
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg transition-colors flex items-center justify-center text-sm sm:text-base"
-              >
-                {loading ? (
-                  'Guardando...'
-                ) : (
-                  <>
-                    <Save size={20} className="mr-2" />
-                    Guardar Estudiante
-                  </>
-                )}
-              </button>
-              <Link
-                href="/"
-                className="px-4 sm:px-6 py-2 sm:py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-center text-sm sm:text-base"
-              >
-                Cancelar
-              </Link>
+            <div className="pt-4">
+              {!success ? (
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg transition-colors flex items-center justify-center text-sm sm:text-base"
+                >
+                  {loading ? (
+                    'Guardando...'
+                  ) : (
+                    <>
+                      <Save size={20} className="mr-2" />
+                      Guardar Estudiante
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={irAPractica}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg transition-colors flex items-center justify-center text-sm sm:text-base"
+                >
+                  <ArrowRight size={20} className="mr-2" />
+                  Ir a Práctica
+                </button>
+              )}
             </div>
           </form>
         </div>
