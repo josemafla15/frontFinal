@@ -1,9 +1,49 @@
-import Link from 'next/link'
+'use client'
 
-export default function Home() {
+import Link from 'next/link'
+import { useAuth } from '@/contexts/AuthContext'
+import ProtectedRoute from '@/components/ProtectedRoute'
+import { LogOut } from 'lucide-react'
+
+function HomeContent() {
+  const { user, logout, isProfesor } = useAuth()
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
       <div className="max-w-4xl mx-auto">
+        {/* Header con información de usuario */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-xl font-bold">
+                {user?.first_name?.[0] || user?.username?.[0] || 'U'}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Bienvenido,</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {user?.first_name && user?.last_name 
+                  ? `${user.first_name} ${user.last_name}`
+                  : user?.username}
+              </p>
+              {isProfesor && (
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                  👨‍🏫 Profesor
+                </span>
+              )}
+            </div>
+          </div>
+
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            <LogOut size={18} />
+            Cerrar Sesión
+          </button>
+        </div>
+
+        {/* Título principal */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
             VeinView AR
@@ -13,6 +53,7 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Cards de funcionalidades */}
         <div className="grid md:grid-cols-2 gap-6 mt-12">
           <Link
             href="/estudiantes/crear"
@@ -64,3 +105,11 @@ export default function Home() {
   )
 }
 
+// Exportar la página principal protegida
+export default function Home() {
+  return (
+    <ProtectedRoute requireProfesor={true}>
+      <HomeContent />
+    </ProtectedRoute>
+  )
+}

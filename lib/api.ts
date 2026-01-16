@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { setupAxiosInterceptors } from './auth'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -8,6 +9,9 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 })
+
+// Configurar interceptores de autenticación
+setupAxiosInterceptors()
 
 // Types
 export interface Estudiante {
@@ -92,7 +96,12 @@ export const estudiantesApi = {
   },
 
   crear: async (data: EstudianteCreate): Promise<Estudiante> => {
-    const response = await api.post('/estudiantes/', data)
+    // Usar axios directamente sin el interceptor de autenticación
+    const response = await axios.post(`${API_URL}/api/estudiantes/`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
     return response.data
   },
 

@@ -36,15 +36,48 @@ export default function CrearEstudiantePage() {
     setError(null)
     setSuccess(false)
 
+    console.log('📤 Enviando datos:', formData)
+
     try {
-      await estudiantesApi.crear(formData)
+      const resultado = await estudiantesApi.crear(formData)
+      console.log('✅ Estudiante creado:', resultado)
       setSuccess(true)
     } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.error ||
-        err.response?.data?.codigo_estudiante?.[0] ||
-        err.response?.data?.correo?.[0] ||
-        'Error al crear el estudiante. Por favor, intenta de nuevo.'
+      console.error('❌ Error completo:', err)
+      console.error('Response data:', err.response?.data)
+      console.error('Status:', err.response?.status)
+      
+      // Mostrar error detallado
+      let errorMessage = 'Error al crear el estudiante.'
+      
+      if (err.response?.data) {
+        const errorData = err.response.data
+        
+        // Si es un objeto con campos específicos
+        if (typeof errorData === 'object') {
+          const errorMessages = []
+          
+          for (const [field, messages] of Object.entries(errorData)) {
+            if (Array.isArray(messages)) {
+              errorMessages.push(`${field}: ${messages.join(', ')}`)
+            } else if (typeof messages === 'string') {
+              errorMessages.push(`${field}: ${messages}`)
+            }
+          }
+          
+          if (errorMessages.length > 0) {
+            errorMessage = errorMessages.join(' | ')
+          }
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData
+        } else if (errorData.error) {
+          errorMessage = errorData.error
+        } else if (errorData.detail) {
+          errorMessage = errorData.detail
+        }
+      }
+      
+      console.log('💬 Mensaje de error:', errorMessage)
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -80,7 +113,8 @@ export default function CrearEstudiantePage() {
 
           {error && (
             <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm sm:text-base">
-              {error}
+              <p className="font-semibold mb-1">Error al crear estudiante:</p>
+              <p className="whitespace-pre-wrap">{error}</p>
             </div>
           )}
 

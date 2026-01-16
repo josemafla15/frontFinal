@@ -13,10 +13,12 @@ import {
   MetricasTiempoReal,
 } from '@/lib/api'
 import HelpButton from '@/components/HelpButton'
+import UserMenu from '@/components/UserMenu'
+import ProtectedRoute from '@/components/ProtectedRoute'
 import { ArrowLeft, Play, Pause, Square, Users, Activity, BarChart3 } from 'lucide-react'
 import Link from 'next/link'
 
-export default function InstructorDashboard() {
+function InstructorDashboardContent() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([])
@@ -113,7 +115,7 @@ export default function InstructorDashboard() {
       setLoading(true)
       const nuevaPractica = await practicasApi.crear(selectedEstudiante, selectedDispositivo)
       setPracticaActual(nuevaPractica)
-      setPracticaFinalizada(null) // Limpiar práctica finalizada anterior
+      setPracticaFinalizada(null)
       await cargarDatos()
     } catch (error: any) {
       alert(error.response?.data?.error || 'Error al iniciar la práctica')
@@ -161,7 +163,6 @@ export default function InstructorDashboard() {
       setLoading(true)
       await practicasApi.finalizar(practicaActual.id)
       alert('Práctica finalizada exitosamente')
-      // Guardar la práctica finalizada para mostrar sus métricas
       setPracticaFinalizada(practicaActual)
       resetearEstado()
     } catch (error: any) {
@@ -187,13 +188,19 @@ export default function InstructorDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-2 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        <Link
-          href="/"
-          className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4 sm:mb-6"
-        >
-          <ArrowLeft size={20} className="mr-2" />
-          Volver al inicio
-        </Link>
+        {/* Header con navegación y usuario */}
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center text-blue-600 hover:text-blue-800"
+          >
+            <ArrowLeft size={20} className="mr-2" />
+            Volver al inicio
+          </Link>
+          
+          {/* Menú de usuario */}
+          <UserMenu />
+        </div>
 
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">Panel de Instructor</h1>
@@ -310,7 +317,6 @@ export default function InstructorDashboard() {
               )}
             </div>
 
-            {/* Lista de Prácticas Activas */}
             {practicasActivas.length > 0 && (
               <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Prácticas Activas</h2>
@@ -404,7 +410,6 @@ export default function InstructorDashboard() {
                       />
                     </div>
 
-                    {/* Botón Ver Métricas Completas - Solo al finalizar */}
                     <div className="mt-6 pt-6 border-t border-gray-200">
                       <button
                         onClick={verMetricasCompletas}
@@ -454,5 +459,14 @@ function MetricCard({ title, value, icon }: { title: string; value: string; icon
       </div>
       <p className="text-lg sm:text-2xl font-bold text-gray-900">{value}</p>
     </div>
+  )
+}
+
+// Exportar el componente protegido
+export default function InstructorDashboard() {
+  return (
+    <ProtectedRoute requireProfesor={true}>
+      <InstructorDashboardContent />
+    </ProtectedRoute>
   )
 }
