@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { estudiantesApi, EstudianteCreate } from '@/lib/api'
+import { AuthService } from '@/lib/auth'
 import HelpButton from '@/components/HelpButton'
 import { ArrowLeft, Save, UserPlus, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
@@ -12,6 +13,7 @@ export default function CrearEstudiantePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [debugInfo, setDebugInfo] = useState<any>(null)
   const [formData, setFormData] = useState<EstudianteCreate>({
     codigo_estudiante: '',
     nombre_completo: '',
@@ -28,6 +30,7 @@ export default function CrearEstudiantePage() {
       [name]: name === 'semestre' ? parseInt(value) || 1 : value,
     }))
     setError(null)
+    setDebugInfo(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,30 +38,48 @@ export default function CrearEstudiantePage() {
     setLoading(true)
     setError(null)
     setSuccess(false)
+    setDebugInfo(null)
 
-    console.log('📤 Enviando datos:', formData)
+    // 🔍 DEBUG: Información antes de enviar
+    const token = AuthService.getAccessToken()
+    const user = AuthService.getUser()
+    
+    console.log('🔐 DEBUG - Antes de crear estudiante:')
+    console.log('   Token existe:', token ? 'SÍ ✅' : 'NO ❌')
+    console.log('   Token (primeros 50 chars):', token?.substring(0, 50))
+    console.log('   Usuario:', user)
+    console.log('   Datos a enviar:', formData)
 
     try {
       const resultado = await estudiantesApi.crear(formData)
       console.log('✅ Estudiante creado:', resultado)
       setSuccess(true)
+      setDebugInfo({
+        tipo: 'success',
+        mensaje: 'Estudiante creado exitosamente',
+        data: resultado
+      })
     } catch (err: any) {
       console.error('❌ Error completo:', err)
       console.error('Response data:', err.response?.data)
       console.error('Status:', err.response?.status)
+      console.error('Headers:', err.response?.headers)
       
-      // Mostrar error detallado
+      // 🔍 Capturar información de debug del backend
+      const backendDebug = err.response?.data?.debug
+      
       let errorMessage = 'Error al crear el estudiante.'
       
       if (err.response?.data) {
         const errorData = err.response.data
         
-        // Si es un objeto con campos específicos
         if (typeof errorData === 'object') {
           const errorMessages = []
           
           for (const [field, messages] of Object.entries(errorData)) {
-            if (Array.isArray(messages)) {
+            if (field === 'error' || field === 'detail') {
+              errorMessages.push(messages as string)
+            } else if (Array.isArray(messages)) {
               errorMessages.push(`${field}: ${messages.join(', ')}`)
             } else if (typeof messages === 'string') {
               errorMessages.push(`${field}: ${messages}`)
@@ -70,15 +91,25 @@ export default function CrearEstudiantePage() {
           }
         } else if (typeof errorData === 'string') {
           errorMessage = errorData
-        } else if (errorData.error) {
-          errorMessage = errorData.error
-        } else if (errorData.detail) {
-          errorMessage = errorData.detail
         }
       }
       
-      console.log('💬 Mensaje de error:', errorMessage)
       setError(errorMessage)
+      
+      // Mostrar información de debug
+      setDebugInfo({
+        tipo: 'error',
+        frontend: {
+          token_existe: !!token,
+          token_preview: token?.substring(0, 50),
+          usuario: user,
+          is_authenticated: AuthService.isAuthenticated(),
+          is_profesor: AuthService.isProfesor()
+        },
+        backend: backendDebug || err.response?.data,
+        status: err.response?.status,
+        mensaje_error: errorMessage
+      })
     } finally {
       setLoading(false)
     }
@@ -118,7 +149,48 @@ export default function CrearEstudiantePage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          {debugInfo && (
+            <div className="mb-6 p-4 bg-gray-100 border border-gray-300 rounded-lg">
+              <h3 className="font-bold text-gray-900 mb-2">
+                🔍 Información de Debug
+              </h3>
+              
+              {debugInfo.tipo === 'error' && (
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-semibold text-sm text-gray-700">Frontend:</p>
+                    <pre className="text-xs bg-white p-2 rounded overflow-x-auto">
+{JSON.stringify(debugInfo.frontend, null, 2)}
+                    </pre>
+                  </div>
+                  
+                  <div>
+                    <p className="font-semibold text-sm text-gray-700">Backend Response:</p>
+                    <pre className="text-xs bg-white p-2 rounded overflow-x-auto">
+{JSON.stringify(debugInfo.backend, null, 2)}
+                    </pre>
+                  </div>
+                  
+                  <div>
+                    <p className="font-semibold text-sm text-gray-700">Status Code:</p>
+                    <p className="text-sm text-gray-900">{debugInfo.status}</p>
+                  </div>
+                </div>
+              )}
+              
+              {debugInfo.tipo === 'success' && (
+                <div>
+                  <p className="text-sm text-green-700">{debugInfo.mensaje}</p>
+                  <pre className="text-xs bg-white p-2 rounded overflow-x-auto mt-2">
+{JSON.stringify(debugInfo.data, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Los campos del formulario aquí - mismo código que antes */}
+          <div className="space-y-4 sm:space-y-6">
             <div>
               <label htmlFor="codigo_estudiante" className="block text-sm font-medium text-gray-700 mb-2">
                 Código de Estudiante *
@@ -228,7 +300,8 @@ export default function CrearEstudiantePage() {
             <div className="pt-4">
               {!success ? (
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleSubmit}
                   disabled={loading}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg transition-colors flex items-center justify-center text-sm sm:text-base"
                 >
@@ -252,7 +325,7 @@ export default function CrearEstudiantePage() {
                 </button>
               )}
             </div>
-          </form>
+          </div>
         </div>
       </div>
       <HelpButton />

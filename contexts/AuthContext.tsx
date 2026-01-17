@@ -46,22 +46,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   /**
-   * Función de login
-   */
+ * Función de login
+ */
   const login = async (credentials: LoginCredentials) => {
     try {
       setLoading(true)
       setError(null)
-
+    
       const authState = await AuthService.login(credentials)
       setState(authState)
-
-      // Redirigir según el rol
-      if (authState.isProfesor) {
-        router.push('/instructor/dashboard')
-      } else {
-        router.push('/')
-      }
+    
+      // ✅ CAMBIO: Siempre redirigir al menú principal
+      router.push('/')
     } catch (err: any) {
       const errorMessage = err.message || 'Error al iniciar sesión'
       setError(errorMessage)

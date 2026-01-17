@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { setupAxiosInterceptors } from './auth'
+import { setupAxiosInterceptors, AuthService } from './auth'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -96,12 +96,16 @@ export const estudiantesApi = {
   },
 
   crear: async (data: EstudianteCreate): Promise<Estudiante> => {
-    // Usar axios directamente sin el interceptor de autenticación
-    const response = await axios.post(`${API_URL}/api/estudiantes/`, data, {
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    })
+    // ✅ SOLUCIÓN: Usar la instancia 'api' que tiene los interceptores configurados
+    // Esto automáticamente añade el token Bearer
+    console.log('📤 Enviando datos:', data)
+    
+    const token = AuthService.getAccessToken()
+    console.log('🔑 Token disponible:', token ? 'SÍ ✅' : 'NO ❌')
+    
+    const response = await api.post('/estudiantes/', data)
+    
+    console.log('✅ Estudiante creado:', response.data)
     return response.data
   },
 
