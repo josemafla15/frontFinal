@@ -292,45 +292,47 @@ export class AuthService {
 /**
  * Configurar interceptor de axios para agregar token automáticamente
  */
-export function setupAxiosInterceptors() {
-  // Request interceptor: agregar token a todas las peticiones
-  axios.interceptors.request.use(
-    (config) => {
-      const token = AuthService.getAccessToken()
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`
-      }
-      return config
-    },
-    (error) => Promise.reject(error)
-  )
 
-  // Response interceptor: manejar errores 401 (token expirado)
-  axios.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-      const originalRequest = error.config
 
-      // Si es 401 y no hemos intentado refrescar
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        originalRequest._retry = true
+// export function setupAxiosInterceptors() {
+//   // Request interceptor: agregar token a todas las peticiones
+//   axios.interceptors.request.use(
+//     (config) => {
+//       const token = AuthService.getAccessToken()
+//       if (token) {
+//         config.headers.Authorization = `Bearer ${token}`
+//       }
+//       return config
+//     },
+//     (error) => Promise.reject(error)
+//   )
 
-        try {
-          const newAccessToken = await AuthService.refreshAccessToken()
-          if (newAccessToken) {
-            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
-            return axios(originalRequest)
-          }
-        } catch (refreshError) {
-          // Si falla el refresh, redirigir a login
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login'
-          }
-          return Promise.reject(refreshError)
-        }
-      }
+//   // Response interceptor: manejar errores 401 (token expirado)
+//   axios.interceptors.response.use(
+//     (response) => response,
+//     async (error) => {
+//       const originalRequest = error.config
 
-      return Promise.reject(error)
-    }
-  )
-}
+//       // Si es 401 y no hemos intentado refrescar
+//       if (error.response?.status === 401 && !originalRequest._retry) {
+//         originalRequest._retry = true
+
+//         try {
+//           const newAccessToken = await AuthService.refreshAccessToken()
+//           if (newAccessToken) {
+//             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+//             return axios(originalRequest)
+//           }
+//         } catch (refreshError) {
+//           // Si falla el refresh, redirigir a login
+//           if (typeof window !== 'undefined') {
+//             window.location.href = '/login'
+//           }
+//           return Promise.reject(refreshError)
+//         }
+//       }
+
+//       return Promise.reject(error)
+//     }
+//   )
+// }

@@ -1,8 +1,9 @@
 import axios from 'axios'
-import { setupAxiosInterceptors, AuthService } from './auth'
+import { AuthService } from './auth'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
+// ✅ Crear instancia de axios
 const api = axios.create({
   baseURL: `${API_URL}/api`,
   headers: {
@@ -10,10 +11,61 @@ const api = axios.create({
   },
 })
 
-// Configurar interceptores de autenticación
-setupAxiosInterceptors()
+// ✅ IMPORTANTE: Configurar interceptores EN ESTA INSTANCIA
+// Request interceptor: agregar token a todas las peticiones
+api.interceptors.request.use(
+  (config) => {
+    const token = AuthService.getAccessToken()
+    
+    // Debug
+    console.log('🔧 Interceptor Request:', {
+      url: config.url,
+      method: config.method,
+      hasToken: !!token,
+      tokenPreview: token ? token.substring(0, 30) + '...' : 'NO TOKEN'
+    })
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    console.error('❌ Error en request interceptor:', error)
+    return Promise.reject(error)
+  }
+)
 
-// Types
+// Response interceptor: manejar errores 401 (token expirado)
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config
+
+    // Si es 401 y no hemos intentado refrescar
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true
+
+      try {
+        const newAccessToken = await AuthService.refreshAccessToken()
+        if (newAccessToken) {
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+          return api(originalRequest)
+        }
+      } catch (refreshError) {
+        // Si falla el refresh, redirigir a login
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login'
+        }
+        return Promise.reject(refreshError)
+      }
+    }
+
+    return Promise.reject(error)
+  }
+)
+
+// Types (sin cambios)
 export interface Estudiante {
   id: number
   codigo_estudiante: string
@@ -25,6 +77,8 @@ export interface Estudiante {
   activo: boolean
   fecha_registro: string
 }
+
+// ... resto del código igual
 
 export interface EstudianteCreate {
   codigo_estudiante: string
