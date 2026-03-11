@@ -3,7 +3,6 @@ import { AuthService } from './auth'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-// ✅ Crear instancia de axios
 const api = axios.create({
   baseURL: `${API_URL}/api`,
   headers: {
@@ -11,29 +10,16 @@ const api = axios.create({
   },
 })
 
-// ✅ IMPORTANTE: Configurar interceptores EN ESTA INSTANCIA
 // Request interceptor: agregar token a todas las peticiones
 api.interceptors.request.use(
   (config) => {
     const token = AuthService.getAccessToken()
-    
-    // Debug
-    console.log('🔧 Interceptor Request:', {
-      url: config.url,
-      method: config.method,
-      hasToken: !!token,
-      tokenPreview: token ? token.substring(0, 30) + '...' : 'NO TOKEN'
-    })
-    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
   },
-  (error) => {
-    console.error('❌ Error en request interceptor:', error)
-    return Promise.reject(error)
-  }
+  (error) => Promise.reject(error)
 )
 
 // Response interceptor: manejar errores 401 (token expirado)
@@ -42,7 +28,6 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    // Si es 401 y no hemos intentado refrescar
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
 
@@ -53,7 +38,6 @@ api.interceptors.response.use(
           return api(originalRequest)
         }
       } catch (refreshError) {
-        // Si falla el refresh, redirigir a login
         if (typeof window !== 'undefined') {
           window.location.href = '/login'
         }
@@ -65,7 +49,6 @@ api.interceptors.response.use(
   }
 )
 
-// Types (sin cambios)
 export interface Estudiante {
   id: number
   codigo_estudiante: string
@@ -77,8 +60,6 @@ export interface Estudiante {
   activo: boolean
   fecha_registro: string
 }
-
-// ... resto del código igual
 
 export interface EstudianteCreate {
   codigo_estudiante: string
@@ -142,7 +123,6 @@ export interface EstadisticasEstudiante {
   ultima_practica: any
 }
 
-// API Functions
 export const estudiantesApi = {
   listar: async (): Promise<Estudiante[]> => {
     const response = await api.get('/estudiantes/')
@@ -150,16 +130,7 @@ export const estudiantesApi = {
   },
 
   crear: async (data: EstudianteCreate): Promise<Estudiante> => {
-    // ✅ SOLUCIÓN: Usar la instancia 'api' que tiene los interceptores configurados
-    // Esto automáticamente añade el token Bearer
-    console.log('📤 Enviando datos:', data)
-    
-    const token = AuthService.getAccessToken()
-    console.log('🔑 Token disponible:', token ? 'SÍ ✅' : 'NO ❌')
-    
     const response = await api.post('/estudiantes/', data)
-    
-    console.log('✅ Estudiante creado:', response.data)
     return response.data
   },
 
@@ -191,23 +162,17 @@ export const practicasApi = {
   },
 
   pausar: async (id: number): Promise<PracticaActiva> => {
-    const response = await api.patch(`/placa/practicas/${id}/`, {
-      estado: 'pausada',
-    })
+    const response = await api.patch(`/placa/practicas/${id}/`, { estado: 'pausada' })
     return response.data
   },
 
   reanudar: async (id: number): Promise<PracticaActiva> => {
-    const response = await api.patch(`/placa/practicas/${id}/`, {
-      estado: 'iniciada',
-    })
+    const response = await api.patch(`/placa/practicas/${id}/`, { estado: 'iniciada' })
     return response.data
   },
 
   finalizar: async (id: number): Promise<PracticaActiva> => {
-    const response = await api.patch(`/placa/practicas/${id}/`, {
-      estado: 'finalizada',
-    })
+    const response = await api.patch(`/placa/practicas/${id}/`, { estado: 'finalizada' })
     return response.data
   },
 

@@ -2,48 +2,29 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { LogIn, User, Lock, AlertCircle, ArrowLeft } from 'lucide-react'
+import { LogIn, User, Lock, AlertCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 
 export default function LoginPage() {
   const { login, loading, error } = useAuth()
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+  const [username, setUsername]     = useState('')
+  const [password, setPassword]     = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [localError, setLocalError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLocalError(null)
 
-    // Limpiar espacios en blanco
     const cleanUsername = username.trim()
     const cleanPassword = password.trim()
 
-    console.log('🔐 Intentando login...')
-    console.log('Usuario:', cleanUsername)
-    console.log('Password length:', cleanPassword.length)
-
-    // Validaciones básicas
-    if (!cleanUsername) {
-      setLocalError('Por favor ingresa tu usuario')
-      return
-    }
-
-    if (!cleanPassword) {
-      setLocalError('Por favor ingresa tu contraseña')
-      return
-    }
+    if (!cleanUsername) { setLocalError('Por favor ingresa tu usuario'); return }
+    if (!cleanPassword) { setLocalError('Por favor ingresa tu contraseña'); return }
 
     try {
-      await login({ 
-        username: cleanUsername, 
-        password: cleanPassword 
-      })
-      console.log('✅ Login exitoso!')
+      await login({ username: cleanUsername, password: cleanPassword })
     } catch (err: any) {
-      console.error('❌ Error en login:', err)
-      console.error('Mensaje:', err.message)
-      console.error('Response:', err.response?.data)
       setLocalError(err.message || 'Error al iniciar sesión')
     }
   }
@@ -51,48 +32,44 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Botón Volver */}
-        <Link
-          href="/"
-          className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6"
-        >
-          <ArrowLeft size={20} className="mr-2" />
-          Volver al inicio
-        </Link>
 
-        {/* Card de Login */}
+
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          {/* Logo y Título */}
+
+          {/* Logo y título */}
           <div className="text-center mb-8">
             <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
               <LogIn className="text-blue-600" size={32} />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Iniciar Sesión
-            </h1>
-            <p className="text-gray-600">
-              Accede al Panel de Instructor de VeinView
-            </p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Iniciar Sesión</h1>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-left">
+                <span className="text-lg">🧑‍🏫</span>
+                <p className="text-blue-700"><span className="font-semibold">Profesores:</span> ingresa con tu usuario y contraseña.</p>
+              </div>
+              <div className="flex items-start gap-2 bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 text-left">
+                <span className="text-lg">👨‍🎓</span>
+                <div className="text-indigo-700">
+                  <p><span className="font-semibold">Estudiantes:</span> ingresa con tu correo y código universitario.</p>
+                  <p className="text-xs text-indigo-500 mt-0.5">💡 Se recomienda cambiar tu contraseña desde el perfil una vez adentro.</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Errores */}
           {(error || localError) && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
               <AlertCircle className="text-red-600 mr-3 flex-shrink-0 mt-0.5" size={20} />
-              <div className="flex-1">
-                <p className="text-red-800 text-sm font-medium">
-                  {localError || error}
-                </p>
-              </div>
+              <p className="text-red-800 text-sm font-medium">{localError || error}</p>
             </div>
           )}
 
           {/* Formulario */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Campo Usuario */}
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                Usuario
+                Usuario / Correo
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -104,8 +81,8 @@ export default function LoginPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   disabled={loading}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  placeholder="veinview"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                  placeholder="usuario o correo@ejemplo.com"
                   autoComplete="username"
                   autoCapitalize="none"
                   autoCorrect="off"
@@ -113,29 +90,35 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Campo Contraseña */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Contraseña
+                Contraseña / Código universitario
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="text-gray-400" size={20} />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  placeholder="Tu contraseña"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                  placeholder="Contraseña o ID universitario"
                   autoComplete="current-password"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
               </div>
             </div>
 
-            {/* Botón Submit */}
             <button
               type="submit"
               disabled={loading}
@@ -143,25 +126,11 @@ export default function LoginPage() {
             >
               {loading ? (
                 <>
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg"
+                    fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   Iniciando sesión...
                 </>
@@ -174,42 +143,10 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Información adicional */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-center text-sm text-gray-600">
-              ¿No tienes una cuenta? Contacta al administrador del sistema
-            </p>
-          </div>
-
-          {/* Credenciales correctas */}
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-800 font-medium mb-1">
-              🔐 Credenciales del sistema:
-            </p>
-            <p className="text-xs text-blue-700">
-              Usuario: <code className="bg-blue-100 px-1 rounded">veinview</code>
-              {' | '}
-              Contraseña: <code className="bg-blue-100 px-1 rounded">Veinview12345!</code>
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setUsername('veinview')
-                setPassword('Veinview12345!')
-              }}
-              className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
-            >
-              Autocompletar credenciales
-            </button>
-          </div>
+          
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-8">
-          <p className="text-sm text-gray-600">
-            VeinView AR © 2024 - Sistema de Prácticas de Canalización Venosa
-          </p>
-        </div>
+        
       </div>
     </div>
   )

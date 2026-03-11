@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { estudiantesApi, EstudianteCreate } from '@/lib/api'
-import { AuthService } from '@/lib/auth'
 import HelpButton from '@/components/HelpButton'
 import { ArrowLeft, Save, UserPlus, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
@@ -13,7 +12,6 @@ export default function CrearEstudiantePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
   const [formData, setFormData] = useState<EstudianteCreate>({
     codigo_estudiante: '',
     nombre_completo: '',
@@ -30,7 +28,6 @@ export default function CrearEstudiantePage() {
       [name]: name === 'semestre' ? parseInt(value) || 1 : value,
     }))
     setError(null)
-    setDebugInfo(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,78 +35,34 @@ export default function CrearEstudiantePage() {
     setLoading(true)
     setError(null)
     setSuccess(false)
-    setDebugInfo(null)
-
-    // 🔍 DEBUG: Información antes de enviar
-    const token = AuthService.getAccessToken()
-    const user = AuthService.getUser()
-    
-    console.log('🔐 DEBUG - Antes de crear estudiante:')
-    console.log('   Token existe:', token ? 'SÍ ✅' : 'NO ❌')
-    console.log('   Token (primeros 50 chars):', token?.substring(0, 50))
-    console.log('   Usuario:', user)
-    console.log('   Datos a enviar:', formData)
 
     try {
-      const resultado = await estudiantesApi.crear(formData)
-      console.log('✅ Estudiante creado:', resultado)
+      await estudiantesApi.crear(formData)
       setSuccess(true)
-      setDebugInfo({
-        tipo: 'success',
-        mensaje: 'Estudiante creado exitosamente',
-        data: resultado
-      })
     } catch (err: any) {
-      console.error('❌ Error completo:', err)
-      console.error('Response data:', err.response?.data)
-      console.error('Status:', err.response?.status)
-      console.error('Headers:', err.response?.headers)
-      
-      // 🔍 Capturar información de debug del backend
-      const backendDebug = err.response?.data?.debug
-      
       let errorMessage = 'Error al crear el estudiante.'
-      
+
       if (err.response?.data) {
         const errorData = err.response.data
-        
+
         if (typeof errorData === 'object') {
           const errorMessages = []
-          
           for (const [field, messages] of Object.entries(errorData)) {
             if (field === 'error' || field === 'detail') {
               errorMessages.push(messages as string)
             } else if (Array.isArray(messages)) {
-              errorMessages.push(`${field}: ${messages.join(', ')}`)
+              errorMessages.push(`${field}: ${(messages as string[]).join(', ')}`)
             } else if (typeof messages === 'string') {
               errorMessages.push(`${field}: ${messages}`)
             }
           }
-          
-          if (errorMessages.length > 0) {
-            errorMessage = errorMessages.join(' | ')
-          }
+          if (errorMessages.length > 0) errorMessage = errorMessages.join(' | ')
         } else if (typeof errorData === 'string') {
           errorMessage = errorData
         }
       }
-      
+
       setError(errorMessage)
-      
-      // Mostrar información de debug
-      setDebugInfo({
-        tipo: 'error',
-        frontend: {
-          token_existe: !!token,
-          token_preview: token?.substring(0, 50),
-          usuario: user,
-          is_authenticated: AuthService.isAuthenticated(),
-          is_profesor: AuthService.isProfesor()
-        },
-        backend: backendDebug || err.response?.data,
-        status: err.response?.status,
-        mensaje_error: errorMessage
-      })
     } finally {
       setLoading(false)
     }
@@ -122,10 +75,7 @@ export default function CrearEstudiantePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4 md:p-6">
       <div className="max-w-2xl mx-auto mt-4 sm:mt-8">
-        <Link
-          href="/"
-          className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4 sm:mb-6"
-        >
+        <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4 sm:mb-6">
           <ArrowLeft size={20} className="mr-2" />
           Volver al inicio
         </Link>
@@ -149,47 +99,6 @@ export default function CrearEstudiantePage() {
             </div>
           )}
 
-          {debugInfo && (
-            <div className="mb-6 p-4 bg-gray-100 border border-gray-300 rounded-lg">
-              <h3 className="font-bold text-gray-900 mb-2">
-                🔍 Información de Debug
-              </h3>
-              
-              {debugInfo.tipo === 'error' && (
-                <div className="space-y-3">
-                  <div>
-                    <p className="font-semibold text-sm text-gray-700">Frontend:</p>
-                    <pre className="text-xs bg-white p-2 rounded overflow-x-auto">
-{JSON.stringify(debugInfo.frontend, null, 2)}
-                    </pre>
-                  </div>
-                  
-                  <div>
-                    <p className="font-semibold text-sm text-gray-700">Backend Response:</p>
-                    <pre className="text-xs bg-white p-2 rounded overflow-x-auto">
-{JSON.stringify(debugInfo.backend, null, 2)}
-                    </pre>
-                  </div>
-                  
-                  <div>
-                    <p className="font-semibold text-sm text-gray-700">Status Code:</p>
-                    <p className="text-sm text-gray-900">{debugInfo.status}</p>
-                  </div>
-                </div>
-              )}
-              
-              {debugInfo.tipo === 'success' && (
-                <div>
-                  <p className="text-sm text-green-700">{debugInfo.mensaje}</p>
-                  <pre className="text-xs bg-white p-2 rounded overflow-x-auto mt-2">
-{JSON.stringify(debugInfo.data, null, 2)}
-                  </pre>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Los campos del formulario aquí - mismo código que antes */}
           <div className="space-y-4 sm:space-y-6">
             <div>
               <label htmlFor="codigo_estudiante" className="block text-sm font-medium text-gray-700 mb-2">
@@ -305,9 +214,7 @@ export default function CrearEstudiantePage() {
                   disabled={loading}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-2 sm:py-3 px-4 sm:px-6 rounded-lg transition-colors flex items-center justify-center text-sm sm:text-base"
                 >
-                  {loading ? (
-                    'Guardando...'
-                  ) : (
+                  {loading ? 'Guardando...' : (
                     <>
                       <Save size={20} className="mr-2" />
                       Guardar Estudiante

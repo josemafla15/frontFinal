@@ -609,9 +609,7 @@ export default function ReportesPage() {
                   <h2 className="text-xl font-bold text-gray-900">📋 Reporte Final — Última Práctica</h2>
                   <span className="text-sm text-gray-400 mt-1">{fmtFecha(ultimaPractica.fecha_inicio)}</span>
                 </div>
-                <p className="text-sm text-gray-500 mb-5">
-                  Calculado desde {metricasUltima.totalLecturas} lecturas de sensores
-                </p>
+                
                 <MetricasGrid
                   precision={`${metricasUltima.precision}%`}
                   precisionSubtitle="Lecturas con técnica correcta"

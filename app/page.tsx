@@ -56,7 +56,7 @@ function HomeContent() {
         {/* Cards de funcionalidades */}
         <div className="grid md:grid-cols-2 gap-6 mt-12">
           <Link
-            href="/estudiantes/crear"
+            href="/estudiante/crear"
             className="block p-8 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow border-2 border-blue-200 hover:border-blue-400"
           >
             <div className="text-center">
